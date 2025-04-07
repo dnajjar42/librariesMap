@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <style>
+            body { 
+                    height: 100%;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+                border: 0;
+                background-attachment: fixed;
+                background-size: 100% auto;
+            }
+
+            .blended_grid {
+                display: block;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                margin: 0px auto 0 auto;
+            }
+
+            .pageHeader {
+                background-color: rgba(235, 193, 193, 0.5);
+                float: left;
+                clear: none;
+                height: 100px;
+                width: 100%;
+            }
+
+            .pageLeftMenu {
+                background-color: rgba(115, 73, 231, 0.5);
+                float: left;
+                clear: none;
+                height: 600px;
+                width: 15%;
+            }
+
+            .pageContent {
+                background-color: rgba(0, 0, 0, 0.5);
+                float: left;
+                clear: none;
+                height: 600px;
+                width: 70%;
+            }
+
+            .pageRightMenu {
+                background-color: rgba(115, 73, 231, 0.5);
+                float: right;
+                clear: none;
+                overflow: auto;
+                height: 600px;
+                width: 15%;
+            }
+
+            .pageFooter {
+                background-color: rgba(235, 193, 193, 0.5);
+                float: left;
+                clear: none;
+                height: 100px;
+                width: 100%;
+            }
+
+            #map {
+                width: 100%;
+                height: 100%;
+            }
+
+        </style>
+
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
+
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+            integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+            crossorigin=""
+        />
+        <script
+            src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""
+        ></script>
+
+        <script>
+            $(document).ready(function () {
+            let midHeight =
+                $(document).height() -
+                $(".pageHeader").height() -
+                $(".pageFooter").height();
+            $(".pageContent").height(midHeight);
+            $(".pageLeftMenu").height(midHeight);
+            $(".pageRightMenu").height(midHeight);
+            });
+
+            $(function () {
+                $(".pageLeftMenu").resizable({ animate: true });
+            });
+        </script>
+    </head>
+
+    <body>
+        <div class="blended_grid">
+            <div class="pageHeader w3-container w3-round-xlarge" >Header</div>
+            <div class="pageLeftMenu">Left</div>
+            <div class="pageContent w3-container w3-round-xlarge">
+                <div id="map"></div>
+            </div>
+            <div class="pageRightMenu">Right</div>
+            <div class="pageFooter">Footer</div>
+        </div>
+
+    <script>
+        var map = L.map("map").setView([40.65, -74], 10);
+
+        var Stadia_AlidadeSmooth = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.{ext}', {
+       	    minZoom: 0,
+	        maxZoom: 20,
+      	    attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      	    ext: 'png'
+        }).addTo(map);
+
+        var baseLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { 
+            attribution: 
+            'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+        });
+
+        var libraryData = L.geoJSON(null, {
+            color: "green", onEachFeature: (f, l) =>{
+                l.bindTooltip(f.properties.name + " in " + f.properties.city);
+                l.on("mouseover", (e) => {
+                    e.target.setStyle({fillColor: "black", fillOpacity: 0.5});
+                })
+                l.on("mouseout", (e) => {
+                    libraryData.resetStyle(e.target);
+                });
+            }
+        }).addTo(map);
+
+        var NTAdata = L.geoJSON(null, {
+            style: (f) => {
+                let col = "blue";
+                if(f.properties.boroname =="Brooklyn") col = "red";
+                if(f.properties.boroname =="Queens") col = "green";
+                if(f.properties.boroname =="Bronx") col = "yellow";
+                if(f.properties.boroname =="Manhattan") col = "purple";
+                return {fillColor: col, opacity: 0.5, weight: 1, color:"black", fillOpacity: 0.3};
+            },
+            onEachFeature: (f, l) => {
+                l.bindTooltip("Tooltip:" + f.properties.ntaname + " in " + f.properties.boroname);
+                l.on("mousedown", (e) => {
+                    e.target.setStyle({fillColor: "orange", fillOpacity: 1});
+                })
+                l.on("mouseout", (e) => {
+                    NTAdata.resetStyle(e.target);
+                });
+            }
+        });
+
+        fetch("./nyc-libraries.geojson").then(
+        function(response) {return response.json();}
+        ).then(function(data) {libraryData.addData(data);})    
+
+        fetch("./2020 Neighborhood Tabulation Areas (NTAs) - Tabular_20240129.geojson").then(
+        function(response) {return response.json();}
+        ).then(function(data) {NTAdata.addData(data);})
+
+        var myIcon = L.icon({
+            iconUrl: 'free-opened-book-icon-3163-thumb.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, 0],
+        });
+
+        L.marker(
+            [40.672367, -73.968093], {
+                icon: myIcon
+            }
+        ).addTo(map)
+        .bindPopup("Brooklyn Central Library")
+        .openPopup();
+
+        L.marker(
+            [40.760813, -73.977454], {
+            }
+        ).addTo(map)
+        .bindPopup("53rd Street Library");
+        
+        L.circleMarker(
+            [40.738569, -73.876974], {
+                fillOpacity: 1, color: "pink"
+            }
+        ).addTo(map)
+        .bindPopup("Queens Public Library at Elmhurst");
+        
+        L.circleMarker(
+            [40.818586, -73.862849], {
+                fillOpacity: 0.7, color: "orange"
+            }
+        ).addTo(map)
+        .bindPopup("Soundiew Library");
+
+        L.circleMarker(
+            [40.552443, -74.151084], {
+                radius: 20, color: "yellow"
+            }
+        ).addTo(map)
+        .bindPopup("Great Kills Library");
+        
+        var baseLayers = {
+            "Stadia": Stadia_AlidadeSmooth,
+            "Elevation": baseLayer
+        };
+
+        var vectorLayers = {
+            "NTA": NTAdata,
+            "Libraries": libraryData
+        };
+
+        L.control.layers(baseLayers, vectorLayers).addTo(map);
+
+    </script>
+  </body>
+</html>
